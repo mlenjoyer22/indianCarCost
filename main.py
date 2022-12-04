@@ -50,10 +50,12 @@ class Items(BaseModel):
 def prepare_df(df):
     df = df.drop(["selling_price", "name", 'torque'], axis=1)
     for i, row in df.iterrows():
+        if re.search('\d+', df.at[i, 'engine']) is None:
+            df.at[i, 'engine'] = np.nan
         if re.search('\d+', df.at[i, 'max_power']) is None:
             # df.at[i, 'max_power'] == ' bhp' or df.at[i, 'max_power'] == np.nan or df.at[i, 'max_power'] == '':
             df.at[i, 'max_power'] = np.nan
-        if df.at[i, 'mileage'] is not np.nan and len(re.findall(r'\d+.', df.at[i, 'mileage'])) > 0:
+        if df.at[i, 'mileage'] is not np.nan and len(re.findall(r'\d+', df.at[i, 'mileage'])) > 0:
             if 'kg' in df.at[i, 'mileage']:
                 df.at[i, 'mileage'] = float(re.findall(r'\d+.?\d*', df.at[i, 'mileage'])[0].replace(',', '')) * 1.4
             else:
@@ -64,11 +66,14 @@ def prepare_df(df):
     df['max_power'] = df['max_power'].str.replace(r'(\d+.?\d*) bhp', r'\1', regex=True)
     df['max_power'] = df['max_power'].str.replace(r'(\d+) ', r'\1', regex=True).astype(float)
 
-    df['engine'] = df['engine'].astype(int)
-    df['seats'] = df['seats'].astype(int)
+
+    df['seats'] = df['seats'].astype(float)
     # filler
     df_mean = joblib.load(path_to_mean)
+    print(df_mean)
     df = df.fillna(df_mean)
+    df['seats'] = df['seats'].astype(int)
+    df['engine'] = df['engine'].astype(int)
     df['seats'] = df['seats'].astype(object)
     df['mileage'] = df['mileage'].astype(float)
 
